@@ -199,10 +199,10 @@ export default function VideoCallScreen() {
         </SafeAreaView>
       )}
 
-      {roomId && peer && (
+      {roomId && peer?.uid && (
         <ReportModal
           visible={showReport}
-          reportedUid={peer.gender}
+          reportedUid={peer.uid}
           roomId={roomId}
           onClose={() => setShowReport(false)}
         />

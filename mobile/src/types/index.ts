@@ -28,6 +28,7 @@ export interface MatchFilters {
 }
 
 export interface PeerInfo {
+  uid: string;
   gender: Gender;
   country: string;
 }

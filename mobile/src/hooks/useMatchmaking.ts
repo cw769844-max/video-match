@@ -34,9 +34,9 @@ export function useMatchmaking() {
         console.log(`In queue, position: ${position}`);
       });
 
-      onMatchFound(({ roomId, isInitiator, peerGender, peerCountry }) => {
+      onMatchFound(({ roomId, isInitiator, peerUid, peerGender, peerCountry }) => {
         setStatus('connecting');
-        setRoom(roomId, isInitiator, { gender: peerGender as any, country: peerCountry });
+        setRoom(roomId, isInitiator, { uid: peerUid, gender: peerGender as any, country: peerCountry });
       });
 
       findMatch(profile?.isPremium ? filters : undefined);

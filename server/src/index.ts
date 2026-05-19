@@ -171,6 +171,7 @@ io.on('connection', (socket) => {
     io.to(userA.socketId).emit('match-found', {
       roomId,
       isInitiator: true,
+      peerUid: userB.uid,
       peerGender: userB.gender,
       peerCountry: userB.country,
     });
@@ -178,6 +179,7 @@ io.on('connection', (socket) => {
     io.to(userB.socketId).emit('match-found', {
       roomId,
       isInitiator: false,
+      peerUid: userA.uid,
       peerGender: userA.gender,
       peerCountry: userA.country,
     });
@@ -237,6 +239,7 @@ io.on('connection', (socket) => {
     io.to(socket.id).emit('match-found', {
       roomId,
       isInitiator: true,
+      peerUid: data.targetUid,
       peerGender: targetProfile?.gender ?? 'unknown',
       peerCountry: targetProfile?.country ?? 'unknown',
       isAdminMatch: true,
@@ -245,6 +248,7 @@ io.on('connection', (socket) => {
     io.to(targetSocketId).emit('match-found', {
       roomId,
       isInitiator: false,
+      peerUid: uid,
       peerGender: profile.gender,
       peerCountry: profile.country,
     });

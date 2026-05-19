@@ -8,6 +8,7 @@ type IceServer = { urls: string; username?: string; credential?: string };
 export interface MatchFoundEvent {
   roomId: string;
   isInitiator: boolean;
+  peerUid: string;
   peerGender: string;
   peerCountry: string;
 }
