@@ -1,0 +1,7 @@
+{
+  "name": "VideoMatch",
+  "displayName": "VideoMatch",
+  "version": "1.0.0",
+  "bundleId": "com.videomatch.app",
+  "androidPackage": "com.videomatch.app"
+}

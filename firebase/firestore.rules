@@ -1,0 +1,43 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(uid) {
+      return request.auth.uid == uid;
+    }
+
+    function isAdmin() {
+      return request.auth.token.admin == true;
+    }
+
+    // Users collection
+    match /users/{uid} {
+      allow read: if isAuthenticated() && (isOwner(uid) || isAdmin());
+      allow create: if isAuthenticated() && isOwner(uid);
+      allow update: if isAuthenticated() && isOwner(uid) && (
+        // Users can only update specific fields — premium/ban status is server-only
+        !request.resource.data.diff(resource.data).affectedKeys()
+          .hasAny(['isPremium', 'premiumExpiry', 'isBanned', 'reportCount', 'stripeCustomerId', 'stripeSubscriptionId'])
+      );
+      allow delete: if false; // Deletion handled server-side
+    }
+
+    // Reports collection — write-only for authenticated users, read for admins
+    match /reports/{reportId} {
+      allow create: if isAuthenticated() && request.resource.data.reporterUid == request.auth.uid;
+      allow read: if isAdmin();
+      allow update, delete: if isAdmin();
+    }
+
+    // Block admins from writing (admin writes go through server SDK)
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
