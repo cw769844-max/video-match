@@ -3,7 +3,6 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Helper functions
     function isAuthenticated() {
       return request.auth != null;
     }
@@ -12,30 +11,63 @@ service cloud.firestore {
       return request.auth.uid == uid;
     }
 
+    // These flags are set server-side only; check the stored document value
     function isAdmin() {
-      return request.auth.token.admin == true;
+      return isAuthenticated() &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
     }
 
-    // Users collection
+    function isSuperAdmin() {
+      return isAuthenticated() &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isSuperAdmin == true;
+    }
+
+    // Fields that only the server (Admin SDK) may write
+    function serverOnlyFields() {
+      return ['isPremium', 'premiumExpiry', 'isBanned', 'reportCount',
+              'isAdmin', 'isSuperAdmin', 'stripeCustomerId', 'stripeSubscriptionId'];
+    }
+
+    // ── App config (first-user super admin flag) ──────────────────────────────
+    match /config/{doc} {
+      // Readable by authenticated users so the client can check
+      allow read: if isAuthenticated();
+      // Only the Admin SDK can write config documents
+      allow write: if false;
+    }
+
+    // ── Users collection ─────────────────────────────────────────────────────
     match /users/{uid} {
-      allow read: if isAuthenticated() && (isOwner(uid) || isAdmin());
-      allow create: if isAuthenticated() && isOwner(uid);
-      allow update: if isAuthenticated() && isOwner(uid) && (
-        // Users can only update specific fields — premium/ban status is server-only
-        !request.resource.data.diff(resource.data).affectedKeys()
-          .hasAny(['isPremium', 'premiumExpiry', 'isBanned', 'reportCount', 'stripeCustomerId', 'stripeSubscriptionId'])
-      );
-      allow delete: if false; // Deletion handled server-side
-    }
+      // Own profile: always readable
+      allow read: if isAuthenticated() && isOwner(uid);
 
-    // Reports collection — write-only for authenticated users, read for admins
-    match /reports/{reportId} {
-      allow create: if isAuthenticated() && request.resource.data.reporterUid == request.auth.uid;
+      // Admins can read any profile
       allow read: if isAdmin();
-      allow update, delete: if isAdmin();
+
+      // Any authenticated user can create their own profile for the first time
+      allow create: if isAuthenticated() && isOwner(uid);
+
+      // Users may update their own profile but cannot touch server-only fields
+      allow update: if isAuthenticated() && isOwner(uid) &&
+        !request.resource.data.diff(resource.data)
+          .affectedKeys()
+          .hasAny(serverOnlyFields());
+
+      // Deletion is server-side only
+      allow delete: if false;
     }
 
-    // Block admins from writing (admin writes go through server SDK)
+    // ── Reports ──────────────────────────────────────────────────────────────
+    match /reports/{reportId} {
+      // Users can create reports where reporterUid matches their own UID
+      allow create: if isAuthenticated() &&
+        request.resource.data.reporterUid == request.auth.uid;
+
+      // Only admins can read and manage reports
+      allow read, update, delete: if isAdmin();
+    }
+
+    // ── Fallback: deny everything else ───────────────────────────────────────
     match /{document=**} {
       allow read, write: if false;
     }

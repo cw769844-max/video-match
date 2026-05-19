@@ -44,7 +44,7 @@ export default function RegisterScreen() {
       return;
     }
     if (!agreedToTerms) {
-      Alert.alert('Error', 'You must agree to the Terms of Service and be 18+');
+      Alert.alert('Error', 'You must agree to the Terms of Service and be 10+');
       return;
     }
 
@@ -60,7 +60,7 @@ export default function RegisterScreen() {
 
   async function handleGoogle() {
     if (!agreedToTerms) {
-      Alert.alert('Error', 'You must agree to the Terms of Service and be 18+');
+      Alert.alert('Error', 'You must agree to the Terms of Service and be 10+');
       return;
     }
     setLoading(true);
@@ -75,7 +75,7 @@ export default function RegisterScreen() {
 
   async function handleApple() {
     if (!agreedToTerms) {
-      Alert.alert('Error', 'You must agree to the Terms of Service and be 18+');
+      Alert.alert('Error', 'You must agree to the Terms of Service and be 10+');
       return;
     }
     setLoading(true);
@@ -148,7 +148,7 @@ export default function RegisterScreen() {
               {agreedToTerms && <Icon name="checkmark" size={14} color={Colors.text} />}
             </View>
             <Text style={styles.termsText}>
-              I am 18+ and agree to the{' '}
+              I am 10+ and agree to the{' '}
               <Text style={styles.link}>Terms of Service</Text> and{' '}
               <Text style={styles.link}>Privacy Policy</Text>
             </Text>

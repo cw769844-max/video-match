@@ -70,7 +70,7 @@ export default function WelcomeScreen() {
             By continuing you agree to our{' '}
             <Text style={styles.link}>Terms of Service</Text> and{' '}
             <Text style={styles.link}>Privacy Policy</Text>.{'\n'}
-            You must be 18+ to use VideoMatch.
+            You must be 10+ to use VideoMatch.
           </Text>
         </View>
       </SafeAreaView>

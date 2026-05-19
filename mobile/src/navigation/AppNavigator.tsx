@@ -21,6 +21,7 @@ import VideoCallScreen from '../screens/main/VideoCallScreen';
 import PremiumScreen from '../screens/main/PremiumScreen';
 import ProfileScreen from '../screens/main/ProfileScreen';
 import SettingsScreen from '../screens/main/SettingsScreen';
+import AdminScreen from '../screens/main/AdminScreen';
 
 const Stack = createStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator<MainTabParamList>();
@@ -36,7 +37,18 @@ const navTheme = {
   },
 };
 
+const TAB_ICONS: Record<string, string> = {
+  Home: 'videocam',
+  Premium: 'star',
+  Profile: 'person',
+  Settings: 'settings',
+  Admin: 'shield',
+};
+
 function MainTabs() {
+  const { profile } = useAuthStore();
+  const isAdmin = profile?.isAdmin || profile?.isSuperAdmin;
+
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
@@ -48,23 +60,27 @@ function MainTabs() {
           height: 60,
           paddingBottom: 8,
         },
-        tabBarActiveTintColor: Colors.primary,
+        tabBarActiveTintColor: route.name === 'Admin' ? Colors.premium : Colors.primary,
         tabBarInactiveTintColor: Colors.textMuted,
-        tabBarIcon: ({ color, size }) => {
-          const icons: Record<string, string> = {
-            Home: 'videocam',
-            Premium: 'star',
-            Profile: 'person',
-            Settings: 'settings',
-          };
-          return <Icon name={icons[route.name] || 'circle'} size={size} color={color} />;
-        },
+        tabBarIcon: ({ color, size }) => (
+          <Icon name={TAB_ICONS[route.name] || 'circle'} size={size} color={color} />
+        ),
       })}
     >
       <Tab.Screen name="Home" component={HomeScreen} options={{ title: 'Chat' }} />
       <Tab.Screen name="Premium" component={PremiumScreen} options={{ title: 'Premium' }} />
       <Tab.Screen name="Profile" component={ProfileScreen} />
       <Tab.Screen name="Settings" component={SettingsScreen} />
+      {isAdmin && (
+        <Tab.Screen
+          name="Admin"
+          component={AdminScreen}
+          options={{
+            title: 'Admin',
+            tabBarBadgeStyle: { backgroundColor: Colors.premium },
+          }}
+        />
+      )}
     </Tab.Navigator>
   );
 }

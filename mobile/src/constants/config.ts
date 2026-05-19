@@ -5,7 +5,7 @@ export const Config = {
   STRIPE_MONTHLY_PRICE_ID: process.env.STRIPE_MONTHLY_PRICE_ID || '',
   STRIPE_YEARLY_PRICE_ID: process.env.STRIPE_YEARLY_PRICE_ID || '',
   GOOGLE_WEB_CLIENT_ID: process.env.GOOGLE_WEB_CLIENT_ID || '',
-  MIN_AGE: 18,
+  MIN_AGE: 10,
   MAX_AGE: 80,
 };
 

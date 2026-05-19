@@ -62,12 +62,22 @@ export default function ProfileScreen() {
 
           <Text style={styles.displayName}>{profile.displayName}</Text>
 
-          {profile.isPremium && (
+          {profile.isSuperAdmin ? (
+            <View style={[styles.premiumTag, { backgroundColor: Colors.premium + '30' }]}>
+              <Icon name="shield" size={12} color={Colors.premium} />
+              <Text style={styles.premiumTagText}>Super Admin</Text>
+            </View>
+          ) : profile.isAdmin ? (
+            <View style={[styles.premiumTag, { backgroundColor: Colors.accent + '25' }]}>
+              <Icon name="shield-outline" size={12} color={Colors.accent} />
+              <Text style={[styles.premiumTagText, { color: Colors.accent }]}>Admin</Text>
+            </View>
+          ) : profile.isPremium ? (
             <View style={styles.premiumTag}>
               <Icon name="star" size={12} color={Colors.premium} />
               <Text style={styles.premiumTagText}>Premium Member</Text>
             </View>
-          )}
+          ) : null}
         </LinearGradient>
 
         {/* Info */}

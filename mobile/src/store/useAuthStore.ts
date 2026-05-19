@@ -21,7 +21,15 @@ export const useAuthStore = create<AuthState>((set) => ({
 
   setUser: (user) => set({ user }),
 
-  setProfile: (profile) =>
+  setProfile: (raw) => {
+    // Admins get effective premium status regardless of subscription
+    const profile = raw
+      ? {
+          ...raw,
+          isPremium: raw.isPremium || raw.isAdmin || raw.isSuperAdmin,
+        }
+      : null;
+
     set({
       profile,
       isProfileComplete: !!(
@@ -30,7 +38,8 @@ export const useAuthStore = create<AuthState>((set) => ({
         profile?.dateOfBirth &&
         profile?.country
       ),
-    }),
+    });
+  },
 
   setLoading: (isLoading) => set({ isLoading }),
 

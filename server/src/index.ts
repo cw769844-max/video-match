@@ -107,6 +107,13 @@ io.use(async (socket, next) => {
     return next(new Error('Account suspended'));
   }
 
+  if (profile.dateOfBirth) {
+    const age = calcAge(profile.dateOfBirth as string);
+    if (age < 10) {
+      return next(new Error('You must be at least 10 years old to use VideoMatch'));
+    }
+  }
+
   (socket as Socket & { uid: string; profile: Record<string, unknown> }).uid = decoded.uid;
   (socket as Socket & { uid: string; profile: Record<string, unknown> }).profile = profile;
   next();
@@ -125,14 +132,17 @@ io.on('connection', (socket) => {
   socket.on('find-match', (data: { filters?: MatchFilters }) => {
     const age = calcAge(profile.dateOfBirth as string);
 
+    // Admins get all premium capabilities without a subscription
+    const effectivelyPremium = (profile.isPremium as boolean) || (profile.isAdmin as boolean) || (profile.isSuperAdmin as boolean);
+
     const entry: QueueEntry = {
       socketId: socket.id,
       uid,
       gender: profile.gender as QueueEntry['gender'],
       age,
       country: profile.country as string,
-      isPremium: profile.isPremium as boolean,
-      filters: profile.isPremium ? data?.filters : undefined,
+      isPremium: effectivelyPremium,
+      filters: effectivelyPremium ? data?.filters : undefined,
       joinedAt: Date.now(),
     };
 
@@ -195,6 +205,63 @@ io.on('connection', (socket) => {
   socket.on('cancel-match', () => {
     matchmaking.dequeue(socket.id);
     socket.emit('match-cancelled');
+  });
+
+  // ── Admin: Force match with a specific online user ────────────────────────
+  socket.on('admin-force-match', async (data: { targetUid: string }) => {
+    const isAdminUser = (profile.isAdmin as boolean) || (profile.isSuperAdmin as boolean);
+    if (!isAdminUser) {
+      socket.emit('error', { message: 'Admin access required' });
+      return;
+    }
+
+    // Find the target user's socket (they must be in the matchmaking queue or idle)
+    const targetSocketId = matchmaking.getSocketByUid(data.targetUid);
+
+    if (!targetSocketId) {
+      // Target not in queue — create a synthetic queue entry for them so they match
+      socket.emit('admin-force-match-error', { message: 'Target user is not currently searching. They must tap "Start" first, or you can join the queue and they will be prioritized for you.' });
+      return;
+    }
+
+    // Remove both from queue and pair them directly
+    matchmaking.dequeue(socket.id);
+    matchmaking.dequeue(targetSocketId);
+
+    const { v4: uuidv4 } = require('uuid');
+    const roomId = uuidv4();
+    matchmaking.createRoom(roomId, socket.id, targetSocketId);
+
+    const targetProfile = await getUserProfile(data.targetUid);
+
+    io.to(socket.id).emit('match-found', {
+      roomId,
+      isInitiator: true,
+      peerGender: targetProfile?.gender ?? 'unknown',
+      peerCountry: targetProfile?.country ?? 'unknown',
+      isAdminMatch: true,
+    });
+
+    io.to(targetSocketId).emit('match-found', {
+      roomId,
+      isInitiator: false,
+      peerGender: profile.gender,
+      peerCountry: profile.country,
+    });
+
+    logger.info(`Admin ${uid} force-matched with ${data.targetUid} in room ${roomId}`);
+  });
+
+  // ── Admin: List connected users ───────────────────────────────────────────
+  socket.on('admin-get-online-users', async () => {
+    const isAdminUser = (profile.isAdmin as boolean) || (profile.isSuperAdmin as boolean);
+    if (!isAdminUser) {
+      socket.emit('error', { message: 'Admin access required' });
+      return;
+    }
+
+    const onlineUsers = matchmaking.getOnlineUsers();
+    socket.emit('admin-online-users', { users: onlineUsers });
   });
 
   // ── Report ───────────────────────────────────────────────────────────────

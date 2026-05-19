@@ -165,7 +165,7 @@ export default function ProfileSetupScreen() {
 
         {/* Date of Birth */}
         <View style={styles.field}>
-          <Text style={styles.label}>Date of Birth (must be 18+)</Text>
+          <Text style={styles.label}>Date of Birth (must be 10+)</Text>
           <TouchableOpacity
             style={styles.inputWrapper}
             onPress={() => setShowDatePicker(true)}

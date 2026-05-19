@@ -14,6 +14,8 @@ export interface UserProfile {
   isVerified: boolean;
   reportCount: number;
   isBanned: boolean;
+  isAdmin: boolean;
+  isSuperAdmin: boolean;
 }
 
 export interface MatchFilters {

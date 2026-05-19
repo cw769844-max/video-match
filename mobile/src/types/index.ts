@@ -15,6 +15,8 @@ export interface UserProfile {
   isVerified: boolean;
   reportCount: number;
   isBanned: boolean;
+  isAdmin: boolean;
+  isSuperAdmin: boolean;
   stripeCustomerId?: string;
   stripeSubscriptionId?: string;
 }
@@ -44,6 +46,7 @@ export type MainTabParamList = {
   Premium: undefined;
   Profile: undefined;
   Settings: undefined;
+  Admin: undefined;
 };
 
 export type CallStatus =
