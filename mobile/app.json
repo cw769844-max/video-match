@@ -1,7 +1,61 @@
 {
-  "name": "VideoMatch",
-  "displayName": "VideoMatch",
-  "version": "1.0.0",
-  "bundleId": "com.videomatch.app",
-  "androidPackage": "com.videomatch.app"
+  "expo": {
+    "name": "VideoMatch",
+    "slug": "videomatch",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "dark",
+    "android": {
+      "package": "com.videomatch.app",
+      "googleServicesFile": "./google-services.json",
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.MODIFY_AUDIO_SETTINGS",
+        "android.permission.INTERNET",
+        "android.permission.ACCESS_NETWORK_STATE",
+        "android.permission.BLUETOOTH",
+        "android.permission.BLUETOOTH_CONNECT",
+        "android.permission.ACCESS_COARSE_LOCATION"
+      ]
+    },
+    "ios": {
+      "bundleIdentifier": "com.videomatch.app",
+      "googleServicesFile": "./GoogleService-Info.plist",
+      "infoPlist": {
+        "NSCameraUsageDescription": "VideoMatch needs camera access so others can see you during video chats.",
+        "NSMicrophoneUsageDescription": "VideoMatch needs microphone access so others can hear you during video chats.",
+        "NSPhotoLibraryUsageDescription": "VideoMatch needs photo library access for profile photos."
+      }
+    },
+    "plugins": [
+      "@react-native-firebase/app",
+      [
+        "@react-native-google-signin/google-signin",
+        {}
+      ],
+      [
+        "@stripe/stripe-react-native",
+        {
+          "merchantIdentifier": "merchant.com.videomatch.app",
+          "enableGooglePay": false
+        }
+      ],
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "minSdkVersion": 24,
+            "compileSdkVersion": 34,
+            "targetSdkVersion": 34,
+            "buildToolsVersion": "34.0.0"
+          },
+          "ios": {
+            "deploymentTarget": "13.4"
+          }
+        }
+      ],
+      "./plugins/withVectorIcons"
+    ]
+  }
 }
