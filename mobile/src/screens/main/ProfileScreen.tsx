@@ -6,7 +6,6 @@ import {
   StyleSheet,
   SafeAreaView,
   ScrollView,
-  Image,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import Icon from 'react-native-vector-icons/Ionicons';
@@ -46,16 +45,12 @@ export default function ProfileScreen() {
         {/* Header */}
         <LinearGradient colors={['#1A0A2E', Colors.background]} style={styles.hero}>
           <View style={styles.avatarWrapper}>
-            {profile.profilePhotoUrl ? (
-              <Image source={{ uri: profile.profilePhotoUrl }} style={styles.avatar} />
-            ) : (
-              <View style={styles.avatarPlaceholder}>
-                <Icon name="person" size={44} color={Colors.textMuted} />
-              </View>
-            )}
-            {profile.isPremium && (
-              <View style={styles.premiumBadge}>
-                <Icon name="star" size={12} color="#000" />
+            <View style={styles.avatarPlaceholder}>
+              <Icon name="person" size={44} color={Colors.textMuted} />
+            </View>
+            {(profile.isPremium || profile.isAdmin) && (
+              <View style={[styles.premiumBadge, profile.isSuperAdmin && { backgroundColor: Colors.premium }]}>
+                <Icon name={profile.isAdmin ? 'shield' : 'star'} size={12} color="#000" />
               </View>
             )}
           </View>
@@ -112,7 +107,6 @@ const styles = StyleSheet.create({
   scroll: { paddingBottom: Spacing.xxl },
   hero: { alignItems: 'center', paddingVertical: Spacing.xxl, paddingHorizontal: Spacing.lg, gap: Spacing.sm },
   avatarWrapper: { position: 'relative' },
-  avatar: { width: 100, height: 100, borderRadius: 50, borderWidth: 3, borderColor: Colors.primary },
   avatarPlaceholder: {
     width: 100,
     height: 100,

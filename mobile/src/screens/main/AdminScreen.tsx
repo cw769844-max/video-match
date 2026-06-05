@@ -9,7 +9,6 @@ import {
   TextInput,
   Alert,
   ActivityIndicator,
-  Image,
   Modal,
   ScrollView,
   RefreshControl,
@@ -50,13 +49,9 @@ function UserCard({
   return (
     <TouchableOpacity style={styles.card} onPress={() => onViewDetail(user)} activeOpacity={0.8}>
       <View style={styles.cardLeft}>
-        {user.profilePhotoUrl ? (
-          <Image source={{ uri: user.profilePhotoUrl }} style={styles.avatar} />
-        ) : (
-          <View style={styles.avatarPlaceholder}>
-            <Icon name="person" size={20} color={Colors.textMuted} />
-          </View>
-        )}
+        <View style={styles.avatarPlaceholder}>
+          <Icon name="person" size={20} color={Colors.textMuted} />
+        </View>
         {user.isAdmin && (
           <View style={[styles.roleBadge, user.isSuperAdmin && styles.superBadge]}>
             <Icon name={user.isSuperAdmin ? 'shield' : 'shield-outline'} size={10} color="#000" />
@@ -159,13 +154,9 @@ function UserDetailModal({
 
         <ScrollView contentContainerStyle={styles.modalScroll}>
           <View style={styles.modalAvatarRow}>
-            {user.profilePhotoUrl ? (
-              <Image source={{ uri: user.profilePhotoUrl }} style={styles.modalAvatar} />
-            ) : (
-              <View style={[styles.modalAvatar, styles.avatarPlaceholder]}>
-                <Icon name="person" size={36} color={Colors.textMuted} />
-              </View>
-            )}
+            <View style={[styles.modalAvatar, styles.avatarPlaceholder]}>
+              <Icon name="person" size={36} color={Colors.textMuted} />
+            </View>
             <Text style={styles.modalName}>{user.displayName}</Text>
           </View>
 
@@ -528,7 +519,6 @@ const styles = StyleSheet.create({
     borderColor: Colors.border,
   },
   cardLeft: { position: 'relative', marginRight: Spacing.sm },
-  avatar: { width: 46, height: 46, borderRadius: 23 },
   avatarPlaceholder: {
     width: 46,
     height: 46,

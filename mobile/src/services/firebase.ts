@@ -1,6 +1,5 @@
 import auth, { FirebaseAuthTypes } from '@react-native-firebase/auth';
 import firestore from '@react-native-firebase/firestore';
-import storage from '@react-native-firebase/storage';
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
 import { Config } from '../constants/config';
 import { UserProfile } from '../types';
@@ -56,8 +55,6 @@ export async function getIdToken(): Promise<string | null> {
 // ─── Firestore ───────────────────────────────────────────────────────────────
 
 async function shouldBeSuperAdmin(): Promise<boolean> {
-  // Use a config document as an atomic flag so only the very first profile ever
-  // created receives super admin. Wrapped in a transaction for safety.
   const configRef = firestore().collection('config').doc('appConfig');
   let granted = false;
 
@@ -78,7 +75,6 @@ export async function createUserProfile(
 ): Promise<void> {
   const now = new Date().toISOString();
 
-  // Check existing doc — don't overwrite admin flags on subsequent profile edits
   const existing = await firestore().collection('users').doc(uid).get();
   const isNew = !existing.exists;
 
@@ -94,12 +90,11 @@ export async function createUserProfile(
         reportCount: 0,
         isBanned: false,
         isVerified: false,
-        isAdmin: isSuperAdmin,    // super admins are also admins
+        isAdmin: isSuperAdmin,
         isSuperAdmin,
         createdAt: now,
         lastSeen: now,
         ...data,
-        // Never overwrite these on subsequent edits
         ...(isNew ? {} : {
           isAdmin: existing.data()?.isAdmin ?? false,
           isSuperAdmin: existing.data()?.isSuperAdmin ?? false,
@@ -137,26 +132,7 @@ export async function updateUserProfile(
     .update({ ...data, lastSeen: new Date().toISOString() });
 }
 
-// ─── Admin helpers (client-side Firestore, guarded by security rules) ─────────
-
-export async function getAllProfiles(
-  pageSize = 50,
-  startAfterDoc?: FirebaseFirestore.DocumentSnapshot,
-): Promise<{ profiles: UserProfile[]; lastDoc: any }> {
-  let query = firestore()
-    .collection('users')
-    .orderBy('createdAt', 'desc')
-    .limit(pageSize);
-
-  if (startAfterDoc) {
-    query = query.startAfter(startAfterDoc) as any;
-  }
-
-  const snapshot = await query.get();
-  const profiles = snapshot.docs.map((d) => d.data() as UserProfile);
-  const lastDoc = snapshot.docs[snapshot.docs.length - 1];
-  return { profiles, lastDoc };
-}
+// ─── Admin helpers ────────────────────────────────────────────────────────────
 
 export async function setAdminStatus(
   targetUid: string,
@@ -170,14 +146,6 @@ export async function setBanStatus(
   isBanned: boolean,
 ): Promise<void> {
   await firestore().collection('users').doc(targetUid).update({ isBanned });
-}
-
-// ─── Storage ─────────────────────────────────────────────────────────────────
-
-export async function uploadProfilePhoto(uid: string, uri: string): Promise<string> {
-  const ref = storage().ref(`profile-photos/${uid}.jpg`);
-  await ref.putFile(uri);
-  return ref.getDownloadURL();
 }
 
 // ─── Age helper ──────────────────────────────────────────────────────────────

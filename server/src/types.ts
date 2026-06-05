@@ -8,7 +8,6 @@ export interface UserProfile {
   country: string;    // ISO 3166-1 alpha-2
   isPremium: boolean;
   premiumExpiry?: string;
-  profilePhotoUrl?: string;
   createdAt: string;
   lastSeen: string;
   isVerified: boolean;

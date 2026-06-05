@@ -9,7 +9,6 @@ export interface UserProfile {
   country: string;
   isPremium: boolean;
   premiumExpiry?: string;
-  profilePhotoUrl?: string;
   createdAt: string;
   lastSeen: string;
   isVerified: boolean;

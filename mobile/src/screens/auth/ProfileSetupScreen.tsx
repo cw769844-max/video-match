@@ -9,18 +9,12 @@ import {
   ScrollView,
   Alert,
   ActivityIndicator,
-  Image,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import Icon from 'react-native-vector-icons/Ionicons';
-import { launchImageLibrary } from 'react-native-image-picker';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
-import {
-  createUserProfile,
-  uploadProfilePhoto,
-  calcAge,
-} from '../../services/firebase';
+import { createUserProfile, calcAge } from '../../services/firebase';
 import { useAuthStore } from '../../store/useAuthStore';
 import { Colors, Spacing, FontSize, FontWeight, BorderRadius } from '../../constants/theme';
 import { COUNTRIES, Config } from '../../constants/config';
@@ -48,15 +42,7 @@ export default function ProfileSetupScreen() {
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [country, setCountry] = useState(profile?.country || '');
   const [showCountryPicker, setShowCountryPicker] = useState(false);
-  const [photoUri, setPhotoUri] = useState<string | null>(profile?.profilePhotoUrl || null);
   const [loading, setLoading] = useState(false);
-
-  async function pickPhoto() {
-    const result = await launchImageLibrary({ mediaType: 'photo', quality: 0.8 });
-    if (result.assets?.[0]?.uri) {
-      setPhotoUri(result.assets[0].uri);
-    }
-  }
 
   async function handleSave() {
     if (!displayName.trim()) {
@@ -80,12 +66,6 @@ export default function ProfileSetupScreen() {
 
     setLoading(true);
     try {
-      let profilePhotoUrl = profile?.profilePhotoUrl;
-
-      if (photoUri && photoUri !== profile?.profilePhotoUrl) {
-        profilePhotoUrl = await uploadProfilePhoto(user!.uid, photoUri);
-      }
-
       await createUserProfile(user!.uid, {
         uid: user!.uid,
         email: user!.email || '',
@@ -93,7 +73,6 @@ export default function ProfileSetupScreen() {
         gender,
         dateOfBirth: dateOfBirth.toISOString(),
         country,
-        profilePhotoUrl,
       });
 
       if (!route.params?.isNewUser) {
@@ -115,20 +94,6 @@ export default function ProfileSetupScreen() {
           {route.params?.isNewUser ? 'Set up your profile' : 'Edit profile'}
         </Text>
         <Text style={styles.subtitle}>This information helps us keep VideoMatch safe for everyone.</Text>
-
-        {/* Photo */}
-        <TouchableOpacity style={styles.photoSection} onPress={pickPhoto}>
-          {photoUri ? (
-            <Image source={{ uri: photoUri }} style={styles.photo} />
-          ) : (
-            <View style={styles.photoPlaceholder}>
-              <Icon name="camera" size={32} color={Colors.textMuted} />
-            </View>
-          )}
-          <Text style={styles.photoLabel}>
-            {photoUri ? 'Change photo' : 'Add profile photo'}
-          </Text>
-        </TouchableOpacity>
 
         {/* Display Name */}
         <View style={styles.field}>
@@ -246,21 +211,6 @@ const styles = StyleSheet.create({
   scroll: { paddingHorizontal: Spacing.lg, paddingTop: Spacing.xl, paddingBottom: Spacing.xxl },
   title: { fontSize: FontSize.xxl, fontWeight: FontWeight.extrabold, color: Colors.text, marginBottom: Spacing.xs },
   subtitle: { fontSize: FontSize.sm, color: Colors.textSecondary, marginBottom: Spacing.xl, lineHeight: 20 },
-  photoSection: { alignItems: 'center', marginBottom: Spacing.xl },
-  photo: { width: 100, height: 100, borderRadius: 50, marginBottom: Spacing.sm },
-  photoPlaceholder: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    backgroundColor: Colors.surfaceLight,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 2,
-    borderColor: Colors.border,
-    borderStyle: 'dashed',
-    marginBottom: Spacing.sm,
-  },
-  photoLabel: { color: Colors.primary, fontSize: FontSize.sm, fontWeight: FontWeight.medium },
   field: { marginBottom: Spacing.lg },
   label: { fontSize: FontSize.sm, color: Colors.textSecondary, marginBottom: Spacing.sm, fontWeight: FontWeight.medium },
   inputWrapper: {
