@@ -1,0 +1,16 @@
+node_modules/
+dist/
+build/
+.env
+*.local
+
+# SQLite dev database
+server/prisma/dev.db
+server/prisma/dev.db-journal
+
+# Prisma generated migrations lock is fine to keep; ignore generated client cache
+server/node_modules/
+
+# Editor
+.vscode/
+.DS_Store

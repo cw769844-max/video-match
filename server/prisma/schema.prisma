@@ -1,0 +1,263 @@
+// SQLite does not support native enums, so enum-like fields are stored as
+// String and validated against the unions in shared/src/index.ts at the
+// application layer (see server/src/validation).
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(cuid())
+  username     String   @unique
+  passwordHash String
+  createdAt    DateTime @default(now())
+
+  hostedCampaigns Campaign[]           @relation("CampaignHost")
+  memberships     CampaignMembership[]
+  binders         Binder[]
+  collectionCards CollectionCard[]
+  packOpenings    PackOpening[]
+  decks           Deck[]
+}
+
+model Campaign {
+  id                  String   @id @default(cuid())
+  name                String
+  hostId              String
+  inviteCode          String   @unique
+  masterRule          String // MasterRule union
+  banlistId           String?
+  allowForbiddenCards Boolean  @default(false)
+  turnTimerSeconds    Int? // null = no timer
+  defaultMatchFormat  String   @default("BO1") // MatchFormat union
+  currentSetIndex     Int      @default(-1) // -1 = no set unlocked yet; host advances via "unlock next set"
+  createdAt           DateTime @default(now())
+
+  host             User                 @relation("CampaignHost", fields: [hostId], references: [id])
+  banlist          Banlist?             @relation(fields: [banlistId], references: [id])
+  memberships      CampaignMembership[]
+  setCategories    CampaignSetCategory[]
+  binders          Binder[]
+  collectionCards  CollectionCard[]
+  packOpenings     PackOpening[]
+  decks            Deck[]
+  matches          Match[]
+}
+
+model CampaignMembership {
+  id         String   @id @default(cuid())
+  campaignId String
+  userId     String
+  role       String // "HOST" | "PLAYER"
+  joinedAt   DateTime @default(now())
+
+  campaign Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  user     User     @relation(fields: [userId], references: [id])
+
+  @@unique([campaignId, userId])
+}
+
+// The set categories (checkboxes) a host has enabled for a campaign's
+// progression pool, e.g. CORE_BOOSTER, SIDE_SET, STRUCTURE_DECK.
+model CampaignSetCategory {
+  id         String @id @default(cuid())
+  campaignId String
+  category   String // SetCategory union
+
+  campaign Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+
+  @@unique([campaignId, category])
+}
+
+model Set {
+  id          String   @id @default(cuid())
+  code        String   @unique
+  name        String
+  category    String // SetCategory union
+  releaseDate DateTime
+  packSize    Int      @default(9)
+
+  printings    CardPrinting[]
+  packOpenings PackOpening[]
+}
+
+model Card {
+  id          String  @id @default(cuid())
+  passcode    String  @unique // official Konami card number
+  name        String
+  cardType    String // CardType union: MONSTER | SPELL | TRAP
+  frameType   String? // normal, effect, fusion, ritual, synchro, xyz, link, spell, trap, etc.
+  race        String? // e.g. Spellcaster, Equip, Continuous...
+  attribute   String?
+  level       Int?
+  rank        Int?
+  linkValue   Int?
+  linkArrows  String? // JSON-encoded array of arrow directions
+  atk         Int?
+  def         Int?
+  description String
+
+  printings       CardPrinting[]
+  banlistEntries  BanlistEntry[]
+  collectionCards CollectionCard[]
+  binderCards     BinderCard[]
+  packOpeningCards PackOpeningCard[]
+  deckCards       DeckCard[]
+}
+
+model CardPrinting {
+  id         String @id @default(cuid())
+  cardId     String
+  setId      String
+  rarity     String
+  cardNumber String
+
+  card Card @relation(fields: [cardId], references: [id])
+  set  Set  @relation(fields: [setId], references: [id])
+
+  @@unique([setId, cardNumber])
+}
+
+model Banlist {
+  id            String   @id @default(cuid())
+  name          String // e.g. "September 2004", "TCG April 2023"
+  effectiveDate DateTime
+
+  campaigns Campaign[]
+  entries   BanlistEntry[]
+}
+
+model BanlistEntry {
+  id        String @id @default(cuid())
+  banlistId String
+  cardId    String
+  status    String // "FORBIDDEN" | "LIMITED" | "SEMI_LIMITED"
+
+  banlist Banlist @relation(fields: [banlistId], references: [id], onDelete: Cascade)
+  card    Card    @relation(fields: [cardId], references: [id])
+
+  @@unique([banlistId, cardId])
+}
+
+// Aggregate ownership per player per campaign (source of truth, grows via pack pulls).
+model CollectionCard {
+  id         String @id @default(cuid())
+  campaignId String
+  ownerId    String
+  cardId     String
+  quantity   Int    @default(0)
+
+  campaign Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  owner    User     @relation(fields: [ownerId], references: [id])
+  card     Card     @relation(fields: [cardId], references: [id])
+
+  @@unique([campaignId, ownerId, cardId])
+}
+
+model Binder {
+  id         String   @id @default(cuid())
+  campaignId String
+  ownerId    String
+  name       String
+  createdAt  DateTime @default(now())
+
+  campaign Campaign     @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  owner    User         @relation(fields: [ownerId], references: [id])
+  cards    BinderCard[]
+}
+
+model BinderCard {
+  id       String @id @default(cuid())
+  binderId String
+  cardId   String
+  quantity Int    @default(0)
+
+  binder Binder @relation(fields: [binderId], references: [id], onDelete: Cascade)
+  card   Card   @relation(fields: [cardId], references: [id])
+
+  @@unique([binderId, cardId])
+}
+
+model PackOpening {
+  id         String   @id @default(cuid())
+  campaignId String
+  userId     String
+  setId      String
+  packCount  Int
+  openedAt   DateTime @default(now())
+
+  campaign Campaign          @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  user     User              @relation(fields: [userId], references: [id])
+  set      Set               @relation(fields: [setId], references: [id])
+  cards    PackOpeningCard[]
+}
+
+model PackOpeningCard {
+  id            String @id @default(cuid())
+  packOpeningId String
+  cardId        String
+  rarity        String
+
+  packOpening PackOpening @relation(fields: [packOpeningId], references: [id], onDelete: Cascade)
+  card        Card        @relation(fields: [cardId], references: [id])
+}
+
+model Deck {
+  id         String   @id @default(cuid())
+  campaignId String
+  ownerId    String
+  name       String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  campaign Campaign   @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  owner    User       @relation(fields: [ownerId], references: [id])
+  cards    DeckCard[]
+}
+
+model DeckCard {
+  id       String @id @default(cuid())
+  deckId   String
+  cardId   String
+  zone     String // "MAIN" | "EXTRA" | "SIDE"
+  quantity Int    @default(1)
+
+  deck Deck @relation(fields: [deckId], references: [id], onDelete: Cascade)
+  card Card @relation(fields: [cardId], references: [id])
+
+  @@unique([deckId, cardId, zone])
+}
+
+model Match {
+  id          String    @id @default(cuid())
+  campaignId  String
+  format      String // MatchFormat union
+  player1Id   String
+  player2Id   String
+  winnerId    String?
+  createdAt   DateTime  @default(now())
+  completedAt DateTime?
+
+  campaign Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  games    Game[]
+}
+
+model Game {
+  id           String   @id @default(cuid())
+  matchId      String
+  gameNumber   Int
+  wentFirstId  String
+  winnerId     String?
+  log          String? // JSON-encoded turn-by-turn action log
+  createdAt    DateTime @default(now())
+  completedAt  DateTime?
+
+  match Match @relation(fields: [matchId], references: [id], onDelete: Cascade)
+
+  @@unique([matchId, gameNumber])
+}
